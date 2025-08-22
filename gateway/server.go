@@ -45,7 +45,7 @@ func (gs *GatewayServer) Start() error {
 	log.Printf("Gateway server started on %s", gs.Listener.Addr())
 
 	// 连接业务工作者
-	go gs.connectToWorker()
+	//go gs.connectToWorker()
 
 	// 接受客户端连接
 	go gs.acceptClients()

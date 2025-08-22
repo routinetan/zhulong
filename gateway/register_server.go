@@ -22,10 +22,10 @@ const (
 
 type RegisterServer struct {
 	ipc.Server
-	listener net.Listener
-	shutdown chan struct{}
-	wg       sync.WaitGroup // 管理工作协程
-
+	listener     net.Listener
+	shutdown     chan struct{}
+	wg           sync.WaitGroup // 管理工作协程
+	addr         string
 	gatewayNodes map[string]gatewayNode
 	workerNodes  map[string]workerNode
 	nodesLock    sync.RWMutex
@@ -46,22 +46,23 @@ type workerNode struct {
 	LastActive time.Time
 }
 
-func NewRegisterServer() *RegisterServer {
+func NewRegisterServer(addr string) *RegisterServer {
 	return &RegisterServer{
+		addr:         addr,
 		shutdown:     make(chan struct{}),
 		gatewayNodes: make(map[string]gatewayNode),
 		workerNodes:  make(map[string]workerNode),
 	}
 }
 
-func (rs *RegisterServer) Start(addr string) error {
-	ln, err := net.Listen("tcp", addr)
+func (rs *RegisterServer) Start() error {
+	ln, err := net.Listen("tcp", rs.addr)
 	if err != nil {
 		return err
 	}
 	rs.listener = ln
 
-	log.Printf("Register server started on %s", addr)
+	log.Printf("Register server started on %s", rs.addr)
 
 	rs.wg.Add(1)
 	go rs.acceptConnections()

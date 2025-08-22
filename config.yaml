@@ -1,0 +1,33 @@
+servers:
+  - enabled: true
+    type: register
+    name: main-register
+    address: "0.0.0.0:8000"
+    p2p_address: "0.0.0.0:8001"
+    bootstrap: []
+    independent: false
+    extra:
+      cleanup_interval: 60
+
+  - enabled: true
+    type: gateway
+    name: gateway-1
+    address: "0.0.0.0:8282"
+    p2p_address: "0.0.0.0:8283"
+    bootstrap: ["localhost:8001"]
+    protocol: "binary"
+    independent: false
+    extra:
+      max_connections: 10000
+      buffer_size: 4096
+
+  - enabled: true
+    type: worker
+    name: chat-worker
+    address: "0.0.0.0:1234"
+    p2p_address: "0.0.0.0:1235"
+    bootstrap: ["localhost:8001"]
+    service: "chat-service"
+    independent: false
+    extra:
+      handler_script: "/scripts/chat_handler.js"
