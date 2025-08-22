@@ -3,6 +3,7 @@ package gateway
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"net"
@@ -10,6 +11,7 @@ import (
 	"time"
 	"zhulong/common"
 	"zhulong/ipc"
+	"zhulong/register"
 )
 
 type GatewayServer struct {
@@ -17,20 +19,22 @@ type GatewayServer struct {
 	Listener     net.Listener
 	Protocol     common.Protocol
 	ConnMgr      *ConnectionManager
+	reg          *register.RegistryClient
 	workerAddr   string
 	workerConn   net.Conn
 	workerLock   sync.Mutex
 	shutdownChan chan struct{}
 }
 
-func NewGatewayServer(addr string, protocol common.Protocol) (*GatewayServer, error) {
+func NewGatewayServer(addr, regAddr string, protocol common.Protocol) (*GatewayServer, error) {
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
 		return nil, err
 	}
-
+	reg := register.NewRegistryClient(regAddr)
 	return &GatewayServer{
 		Listener:     ln,
+		reg:          reg,
 		Protocol:     protocol,
 		ConnMgr:      NewConnectionManager(),
 		shutdownChan: make(chan struct{}),
@@ -49,6 +53,12 @@ func (gs *GatewayServer) Start() error {
 
 	// 接受客户端连接
 	go gs.acceptClients()
+
+	// 注册当前网关节点
+	ip, port := getLocalIPPort(gw.Listener)
+	if err := gs.reg.RegisterGateway(fmt.Sprintf("%s:%d", ip, port), ip, port); err != nil {
+		log.Printf("Register gateway failed: %v", err)
+	}
 
 	return nil
 }
@@ -70,6 +80,12 @@ func (gs *GatewayServer) Stop() {
 
 	// 关闭所有客户端连接
 	gs.ConnMgr.CloseAll()
+
+	// 取消注册
+	if err := gs.reg.UnregisterGateway(*serviceName, ip, port); err != nil {
+		log.Printf("Unregister worker failed: %v", err)
+	}
+
 }
 
 func (gs *GatewayServer) acceptClients() {

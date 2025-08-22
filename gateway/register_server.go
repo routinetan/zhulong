@@ -149,19 +149,23 @@ func (rs *RegisterServer) handleConnection(conn net.Conn) {
 func (rs *RegisterServer) handleMessage(conn net.Conn, msg *WorkerMessage) {
 	switch msg.Header.Cmd {
 	case RegisterCmdRegister:
-		rs.handleRegister(conn, msg.Body)
+		rs.handleRegister(msg.Body)
+		break
 	case RegisterCmdHeartbeat:
 		rs.handleHeartbeat(msg.Body)
+		break
 	case RegisterCmdUnregister:
 		rs.handleUnregister(msg.Body)
+		break
 	case RegisterCmdGetNodes:
 		rs.handleGetNodes(conn)
+		break
 	default:
 		log.Printf("Unknown register command: %d", msg.Header.Cmd)
 	}
 }
 
-func (rs *RegisterServer) handleRegister(conn net.Conn, data []byte) {
+func (rs *RegisterServer) handleRegister(data []byte) {
 	if len(data) < 1 {
 		log.Println("Invalid register message: too short")
 		return
