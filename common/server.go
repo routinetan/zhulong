@@ -13,6 +13,11 @@ import (
 	"time"
 )
 
+type ServerRunnable interface {
+	Start() error
+	Stop()
+}
+
 // ServerType 定义服务器类型
 type ServerType int
 
@@ -34,6 +39,7 @@ type ServerConfig struct {
 	Address     string
 	ConnHandler ConnHandler
 	OnStart     func()
+	Context     context.Context
 	OnShutdown  func()
 }
 
@@ -46,6 +52,7 @@ type Server struct {
 	wg             sync.WaitGroup
 	Shutdown       chan struct{}
 	StartTime      time.Time
+	Context        context.Context
 	maxConnections int
 	running        bool
 }
